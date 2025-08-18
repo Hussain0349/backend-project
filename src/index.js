@@ -1,14 +1,15 @@
 import dotenv from "dotenv";
 dotenv.config();
+import app from "./app.js";
 // import mongoose from "mongoose";
 // import { DB_NAME } from "./constent";
 import express from "express";
 import connect from "./db/db_connection.js";
 import { MongooseError } from "mongoose";
 
-const app = express()
+// const app = express()
 
-
+const PORT = process.env.PORT || 8000;
 
 
 
@@ -30,8 +31,8 @@ const app = express()
 
 connect()
 .then(() => {
-    app.listen(process.env.PORT || 8000, () => {
-        console.log(`server is running in ${PORT}`)
+    app.listen(PORT, () => {
+        console.log(`server is running on${PORT}`)
     })
 })
 .catch((error) => {
