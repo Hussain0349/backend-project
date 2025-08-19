@@ -6,6 +6,26 @@ import { apiResponse } from "../utils/apiResponse.js";
 
 
 
+const generateAccessAndRefreshTokens = async (userId) => {
+
+  try {
+
+    const user = await User.findById(userId)
+    const accessToken = user.generateAccessToken()
+    const refreshToken = user.generateRefreshToken()
+
+    user.refreshToken = refreshToken
+    await user.save({validateBeforeSave: false})
+
+    return {accessToken,refreshToken}
+
+    
+  } catch (error) {
+    throw new apiError(500, 'something went wrong while generating refresh and access tokens')
+  }
+
+}
+
 export const registerUser = asyncHandler(async (req, res) => {
   
   const {fullname,email,username,password} = req.body
@@ -65,4 +85,64 @@ export const registerUser = asyncHandler(async (req, res) => {
 const response = new apiResponse(201,createdUser,"user registered Successfully! ")
   return res.status(response.statusCode).json(response)
 });
+
+export const userLogin = asyncHandler(async (req,res) => {
+  const {email,username,password} = req.body
+
+  if (!username || !password){
+    throw new apiError(400, 'Both username or password required')
+  }
+  const user = await User.findOne({
+    $or: [{username}, {password}]
+  })
+
+  if(!user) {
+    throw new apiError(404, 'user does not exist')
+  }
+ const isPasswordValid =  await user.isPasswordCorrect(password)
+ if(!isPasswordValid) {
+    throw new apiError(404, 'password ivalid credentials')
+  }
+
+  const {accessToken,refreshToken} = await generateAccessAndRefreshTokens(user._id)
+
+  const logedInUser = User.findById(user._id).select('-password -refreshToken')
+
+  const options = {
+    httpOnly: true,
+    secure: true
+  }
+
+  return res.status(200,).cookie('accessToken',accessToken,options)
+  .cookie('refreshToken', refreshToken,options)
+  .json(
+    new apiResponse(200,{
+      user: logedInUser,accessToken,refreshToken
+    },
+    "User Loged in sucessfully! "
+  )
+  )
+
+ 
+})
+
+export const logedOut =  asyncHandler(async () => {
+
+  User.findByIdAndUpdate(req.user_id, 
+    {
+      refreshToken: undefined
+    },
+    {
+      new: true
+    }
+  )
+   const options = {
+    httpOnly: true,
+    secure: true
+  }
+
+  res.status(200).clearCookie('accessToken',options)
+  .json(new apiResponse(200,{},'user loged out sucessfully'))
+
+})
 

@@ -8,8 +8,9 @@
 // export default router;
 
 import express from "express";
-import { registerUser } from "../controllers/user.controller.js";
+import { logedOut, registerUser, userLogin } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJwt } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
@@ -31,4 +32,9 @@ registerUser);
 // or if you want GET
 // router.get("/register", registerUser);
 
+
+router.post('/login',userLogin)
+
+// secured routes
+router.post('/logedOut',verifyJwt,logedOut)
 export default router;
