@@ -14,7 +14,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 const router = express.Router();
 
 // POST or GET depending on what you want
-router.get("/register",
+router.post("/register",
     upload.fields([
         {
             name: 'avatar',
